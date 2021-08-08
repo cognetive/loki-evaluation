@@ -1,0 +1,37 @@
+server:
+  http_listen_port: 9080
+  grpc_listen_port: 0
+positions:
+  filename: /tmp/positions.yaml
+clients:
+  - url: http://loki-cluster-end-point/loki/api/v1/push
+    batchsize: 1024000
+scrape_configs:
+- job_name: logs
+  static_configs:
+  - targets:
+     - localhost
+    labels:
+      job: promtail
+      __path__: /tmp/*.json
+  pipeline_stages:
+  - json:
+      expressions:
+        ts: _ts
+        host: _host
+        account: _account
+        app: _app
+        line: _line
+        node: node
+        namespace: namespace
+        pod: pod
+        container: container
+  - labels:
+      host:
+      account:
+      app:
+      node:
+      namespace:
+  - timestamp:
+      format: UnixMs
+      source: ts

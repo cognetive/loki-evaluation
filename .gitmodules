@@ -1,0 +1,3 @@
+[submodule "loki/lokideploy"]
+	path = loki/lokideploy
+	url = git@github.com:eranra/lokideploy.git
