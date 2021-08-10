@@ -1,0 +1,61 @@
+apiVersion: v1
+kind: Template
+metadata:
+  name: downloadfromloki
+objects:
+- apiVersion: v1
+  kind: ServiceAccount
+  metadata:
+    name: downloadfromloki-service-account
+#
+# Pod of downloadfromloki
+#
+- apiVersion: v1
+  kind: Pod
+  metadata:
+    name: ${pod_name}
+    labels:
+      app: ${pod_name}
+      appType: downloadfromloki
+  spec:
+    serviceAccountName: downloadfromloki-service-account
+    restartPolicy: Never
+    containers:
+    - image: grafana/logcli
+      securityContext:
+        runAsUser: 0
+        privileged: true
+        allowPrivilegeEscalation: true
+      imagePullPolicy: Always
+      name: downloadfromloki
+      env:
+          - name: LOKI_ADDR
+            value: "${loki_endpoint}"
+      command: ["/bin/bash"]
+      args:
+      - -c
+      - >
+        echo $(date) "==> START Querying loki";
+        start=$(date);
+        time logcli query '{filename="${file_name_json}"}' --limit=5000000 --batch="${batch}" --stats --from="${from}" --to="${to}" --org-id="${org_id}" > /dev/null;
+        end=$(date);
+        start_sec=$(date -d "$start" +%s);
+        end_sec=$(date -d "$end" +%s);
+        echo $(date)" ==> DONE --> logcli downloaded ${file_name_json} in $(( end_sec-start_sec )) seconds !!!! <-- started on $start ended on $end";
+        while true; do
+          sleep 30;
+        done;
+
+parameters:
+  - name: loki_endpoint
+  - name: file_name_json
+  - name: pod_name
+    value: downloadfromloki
+  - name: org_id
+    value: min_labels
+  - name: batch
+    value: "500000"
+  - name: from
+    value: "2021-01-01T00:00:00+00:00"
+  - name: to
+    value: "2022-01-01T00:00:00+00:00"
