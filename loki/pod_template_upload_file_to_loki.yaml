@@ -8,30 +8,25 @@ objects:
   metadata:
     name: uploadtoloki-service-account
 #
-# Deployment of uploadtoloki pod
+# Pod of uploadtoloki pod
 #
-- apiVersion: apps/v1
-  kind: Deployment
+- apiVersion: v1
+  kind: Pod
   metadata:
-    name: ${deployment_name}
+    name: ${pod_name}
+    labels:
+      app: ${pod_name}
+      appType: uploadtoloki
   spec:
-    replicas: 1
-    selector:
-      matchLabels:
-        app: ${deployment_name}
-    template:
-      metadata:
-        labels:
-          app: ${deployment_name}
-      spec:
         serviceAccountName: uploadtoloki-service-account
+        restartPolicy: Never
         containers:
         - image: registry.fedoraproject.org/fedora
           securityContext:
             runAsUser: 0
             privileged: true
             allowPrivilegeEscalation: true
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           name: uploadtoloki
           command: ["/bin/bash"]
           args:
@@ -45,6 +40,7 @@ objects:
             clients:
               - url: "${loki_endpoint}"
                 batchsize: 1024000
+                tenant_id: min_labels
             scrape_configs:
               - job_name: logs
                 static_configs:
@@ -65,12 +61,12 @@ objects:
                       namespace: namespace
                       pod: pod
                       container: container
-                - labels:
-                    host:
-                    account:
-                    app:
-                    node:
-                    namespace:
+                # - labels:
+                #     host:
+                #     account:
+                #     app:
+                #     node:
+                #     namespace:
                 - output:
                     source: line
             " > promtail-config.yaml;
@@ -119,6 +115,9 @@ objects:
               promtail_sent_entries_total=$(curl localhost:9080/metrics 2>/dev/null | sed -n 's/.*promtail_sent_entries_total{.*} \(.*\)/\1/p');
               promtail_sent_entries_total=$(printf "%.0f" "$promtail_sent_entries_total");
               echo "promtail_sent_entries_total = $promtail_sent_entries_total";
+              promtail_sent_bytes_total=$(curl localhost:9080/metrics 2>/dev/null | sed -n 's/.*promtail_sent_bytes_total{.*} \(.*\)/\1/p');
+              promtail_sent_bytes_total=$(printf "%.0f" "$promtail_sent_bytes_total");
+              echo "promtail_sent_bytes_total = $promtail_sent_bytes_total";
               promtail_dropped_entries_total=$(curl localhost:9080/metrics 2>/dev/null | sed -n 's/.*promtail_dropped_entries_total{.*} \(.*\)/\1/p');
               promtail_dropped_entries_total=$(printf "%.0f" "$promtail_dropped_entries_total");
               echo "promtail_dropped_entries_total = $promtail_dropped_entries_total";
@@ -142,5 +141,5 @@ parameters:
   - name: source_s3_endpoint
   - name: source_s3_credentials
   - name: source_s3_folder
-  - name: deployment_name
+  - name: pod_name
     value: uploadtoloki
