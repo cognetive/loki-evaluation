@@ -1,6 +1,9 @@
 # loki-evaluation
 Evaluate Loki for bulk ingest and query
 
+This repository accompanies the blogpost:
+[Yes, you can use Loki to efficiently retrieve big data for analysis](https://medium.com/@ronen.schaffer/yes-you-can-use-loki-to-efficiently-retrieve-big-data-for-analysis-80058a922624)
+
 Follow these steps to run the evaluation:
 
 1. Set the working directory
